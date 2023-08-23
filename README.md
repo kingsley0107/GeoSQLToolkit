@@ -24,9 +24,13 @@ Currently Learning:
 - Kafka: Controlling database throughput, using message queue transmission control during data crawling and storage to reduce database throughput burden, trading time for space.
 - Redis: Similar, focusing on learning data structure design concepts.
 
+### Database structure
+
+![datastructure](./introduction/storage_structure.png "structure")
+
 ### Disclaimer:
 
-This crawler code is intended for personal learning and research purposes only. Please do not use it for any non-scientific or illegal purposes.
+The code is intended for personal studying and research purposes only. Please do not use it for any non-scientific or illegal purposes.
 
 ### Contact:
 

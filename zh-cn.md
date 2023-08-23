@@ -24,6 +24,10 @@ GeoSQLToolkit 是一个时空大数据管理工具，其主要涵盖从 0 开始
 - Kafka:控制数据库吞吐量，数据爬取入库过程中进行消息队列传输量控制，减少数据库吞吐负担，用时间换空间
 - redis：类似，关注学习数据结构设计思路
 
+### 数据库存储结构
+
+![datastructure](./introduction/storage_structure.png "structure")
+
 ### Disclaimer：
 
 This crawler code is intended for personal learning and research purposes only. Please do not use it for any non-scientific or illegal purposes.
