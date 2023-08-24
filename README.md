@@ -28,6 +28,17 @@ Currently Learning:
 
 ![datastructure](./introduction/storage_structure.png "structure")
 
+### Data Content
+
+| Data               | Data Type | Scale   | Region | Source            |
+| ------------------ | --------- | ------- | ------ | ----------------- |
+| POI                | Point     | Point   | CN     | Gaode             |
+| AOI                | Polygon   | Polygon | CN     | Gaode             |
+| mobility           | Graph     | City    | CN     | Baidu             |
+| social-demographic | /         | City    | CN     | Baidu             |
+| Night_Light_Image  | tif       | City(m) | CN     | Harvard Dataverse |
+| StreetView Image   | png       | Point   | CN     | Baidu             |
+
 ### Disclaimer:
 
 The code is intended for personal studying and research purposes only. Please do not use it for any non-scientific or illegal purposes.
