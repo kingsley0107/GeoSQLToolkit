@@ -62,25 +62,21 @@ class BoundariesCrawler:
     def extract_gdf(self, raw_data):
         if raw_data['districts'][0]['level'] != self.level:
             raise TypeError("administration level is not match.")
-        _this_name = raw_data['districts'][0]['name']
-        _this_adcode = raw_data['districts'][0]['adcode']
-        _this_level = raw_data['districts'][0]['level']
-        # _this_geom = [
-        #     [tuple(map(float, coord.split(','))) for coord in raw_data['districts'][0]['polyline'].split(";")]]
+        _this = raw_data['districts'][0]
+        _this_name, _this_adcode, _this_level = _this['name'], _this['adcode'], _this['level']
+
         _this_geom = list(map(
-            lambda pair: tuple
-            (map(float, pair.split(","))),
-            re.split(r'[;|]', raw_data['districts'][0]['polyline']
-                     )
+            lambda pair: tuple(map(float, pair.split(","))),
+            re.split(r'[;|]', _this['polyline'])
         ))
-        polygons = Polygon(_this_geom)
-        multi_polygon = MultiPolygon([polygons])
+        multi_polygon = MultiPolygon([Polygon(_this_geom)])
         gdf = gpd.GeoDataFrame(
             {'name': [_this_name], "adcode": [_this_adcode], "level": [_this_level], "geometry": [multi_polygon]},
-            geometry='geometry')
-        geojson_data = gdf.to_json()
-        data_to_mongo = {**json.loads(gdf.to_json())['features'][0]['properties'],
-                         **json.loads(gdf.to_json())['features'][0]['geometry']}
+            geometry='geometry'
+        )
+        data_to_mongo = gdf.iloc[0].to_dict()
+        data_to_mongo['geometry'] = data_to_mongo['geometry'].__geo_interface__
+
         return data_to_mongo
 
     def crawl_boundaries(self):
