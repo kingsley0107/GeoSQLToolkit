@@ -14,14 +14,19 @@ import json
 import time
 import datetime
 from shapely.geometry import Polygon, MultiPolygon
-from db_conn import RAW_DB, engine
+from db_conn import RAW_DB, DATA_PRO
 import re
 
+
+# TODO: 1.Retry function & Time-out situation
+# TODO: 2.Mismatch Problem & resolution
 class BoundariesCrawler:
     def __init__(self, level):
         self.base_url = "https://restapi.amap.com/v3/config/district?"
         self.amap_key = "aaf04443bb4dc7e3c0edc365fe5e7f83"
         self.level = level
+        self.current_year = datetime.datetime.now().year
+        self.collection_name = f'{self.current_year}_amap_boundary_{self.level}'
         self._user_SessionConfig()
 
     def _user_SessionConfig(self):
@@ -45,7 +50,8 @@ class BoundariesCrawler:
     def get_cities_list(self):
         cities_info = pd.read_csv(r'./mainland_adcode.csv')
         cities_list = cities_info['NAME'].values.tolist()
-        return cities_list
+        cities_adcode_list = cities_info['CITYADCODE'].values.tolist()
+        return cities_list, cities_adcode_list
 
     def request_url(self, url, params=None):
         """通用request请求器
@@ -61,6 +67,9 @@ class BoundariesCrawler:
         return json.loads(response.text)
 
     def extract_gdf(self, raw_data):
+        if raw_data['count'] == "0":
+            print(f"Cannot find this area")
+            return None
         if raw_data['districts'][0]['level'] != self.level:
             raise TypeError("administration level is not match.")
         _this = raw_data['districts'][0]
@@ -81,6 +90,23 @@ class BoundariesCrawler:
         return data_to_mongo
 
     def crawl_boundaries(self):
+        # params = {
+        #     "keywords": None,
+        #     "subdistrict": 0,
+        #     "extensions": 'all',
+        #     "key": self.amap_key
+        # }
+        # print(f"Start crawling {self.level} from AMap...")
+        # if self.level == 'city':
+        #     administration_list, adcode_list = self.get_cities_list()
+        #
+        # elif self.level == 'province':
+        #     administration_list = self.get_province_list()
+        # for district in administration_list:
+        #     params['keywords'] = district
+        #     request_response = self.request_url(self.base_url, params=params)
+        #     data_to_mongo = self.extract_gdf(request_response)
+        #     self.data_to_mongo(data_to_mongo)
         params = {
             "keywords": None,
             "subdistrict": 0,
@@ -88,28 +114,38 @@ class BoundariesCrawler:
             "key": self.amap_key
         }
         print(f"Start crawling {self.level} from AMap...")
+
         if self.level == 'city':
-            administration_list = self.get_cities_list()
+            administration_list, adcode_list = self.get_cities_list()
+            for district, adcode in zip(administration_list, adcode_list):
+                if self.is_existed(district):
+                    continue
+                params['keywords'] = adcode
+                request_response = self.request_url(self.base_url, params=params)
+                data_to_mongo = self.extract_gdf(request_response)
+                if not data_to_mongo:
+                    continue
+                data_to_mongo['name'] = district
+                self.data_to_mongo(data_to_mongo)
+
         elif self.level == 'province':
             administration_list = self.get_province_list()
-        for district in administration_list:
-            params['keywords'] = district
-            request_response = self.request_url(self.base_url, params=params)
-            data_to_mongo = self.extract_gdf(request_response)
-            self.data_to_mongo(data_to_mongo)
+            for district in administration_list:
+                if self.is_existed(district):
+                    continue
+                params['keywords'] = district
+                request_response = self.request_url(self.base_url, params=params)
+                data_to_mongo = self.extract_gdf(request_response)
+                self.data_to_mongo(data_to_mongo)
+
+    def is_existed(self, name):
+        if RAW_DB[self.collection_name].find_one({"name": name}):
+            print(f"Skipped insertion for {name} (already exists)...")
+            return True
 
     def data_to_mongo(self, row_data):
-        current_year = datetime.datetime.now().year
-        collection_name = f'{current_year}_amap_boundary_{self.level}'
-
-        # 查询集合中是否已存在相同省份的记录
-        existing_record = RAW_DB[collection_name].find_one({"name": row_data['name']})
-
-        if existing_record is None:
-            RAW_DB[collection_name].insert_one(row_data)
-            print(f"Inserted {row_data['name']}...")
-        else:
-            print(f"Skipped insertion for {row_data['name']} (already exists)...")
+        RAW_DB[self.collection_name].insert_one(row_data)
+        print(f"Inserted {row_data['name']}...")
 
 
 if __name__ == "__main__":
