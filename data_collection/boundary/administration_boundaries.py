@@ -13,8 +13,8 @@ import requests
 import json
 import time
 from shapely.geometry import Polygon, MultiPolygon
-from db_conn import RAW_DB,engine
-
+from db_conn import RAW_DB, engine
+import re
 
 class BoundariesCrawler:
     def __init__(self, level):
@@ -65,9 +65,15 @@ class BoundariesCrawler:
         _this_name = raw_data['districts'][0]['name']
         _this_adcode = raw_data['districts'][0]['adcode']
         _this_level = raw_data['districts'][0]['level']
-        _this_geom = [
-            [tuple(map(float, coord.split(','))) for coord in raw_data['districts'][0]['polyline'].split(";")]]
-        polygons = Polygon(_this_geom[0])
+        # _this_geom = [
+        #     [tuple(map(float, coord.split(','))) for coord in raw_data['districts'][0]['polyline'].split(";")]]
+        _this_geom = list(map(
+            lambda pair: tuple
+            (map(float, pair.split(","))),
+            re.split(r'[;|]', raw_data['districts'][0]['polyline']
+                     )
+        ))
+        polygons = Polygon(_this_geom)
         multi_polygon = MultiPolygon([polygons])
         gdf = gpd.GeoDataFrame(
             {'name': [_this_name], "adcode": [_this_adcode], "level": [_this_level], "geometry": [multi_polygon]},
@@ -90,12 +96,14 @@ class BoundariesCrawler:
         elif self.level == 'province':
             administration_list = self.get_province_list()
         for district in administration_list:
-            print(district)
             params['keywords'] = district
             request_response = self.request_url(self.base_url, params=params)
             data_to_mongo = self.extract_gdf(request_response)
-            RAW_DB.insert_one(data_to_mongo)
-            return request_response
+            self.data_to_mongo(data_to_mongo)
+
+    def data_to_mongo(self, row_data):
+        RAW_DB.insert_one(row_data)
+        print(f"inserted {row_data['name']}...")
 
 
 if __name__ == "__main__":
