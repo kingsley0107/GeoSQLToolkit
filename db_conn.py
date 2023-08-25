@@ -13,8 +13,8 @@ class PGConfigs(str, Enum):
 
 # 连接到 MongoDB
 client = MongoClient("mongodb://localhost:27017/")
-db = client["GeoSQLToolkit"]
-RAW_DB = db['2023_amap_boundary_province']
+RAW_DB = client["GeoSQLToolkit"]
+
 
 engine = create_engine(
     f"postgresql://{PGConfigs.User}:{PGConfigs.Password}@{PGConfigs.HOST}:{PGConfigs.PORT}/{PGConfigs.Database}")

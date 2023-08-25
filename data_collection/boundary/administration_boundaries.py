@@ -12,6 +12,7 @@ import geopandas as gpd
 import requests
 import json
 import time
+import datetime
 from shapely.geometry import Polygon, MultiPolygon
 from db_conn import RAW_DB, engine
 import re
@@ -98,8 +99,17 @@ class BoundariesCrawler:
             self.data_to_mongo(data_to_mongo)
 
     def data_to_mongo(self, row_data):
-        RAW_DB.insert_one(row_data)
-        print(f"inserted {row_data['name']}...")
+        current_year = datetime.datetime.now().year
+        collection_name = f'{current_year}_amap_boundary_{self.level}'
+
+        # 查询集合中是否已存在相同省份的记录
+        existing_record = RAW_DB[collection_name].find_one({"name": row_data['name']})
+
+        if existing_record is None:
+            RAW_DB[collection_name].insert_one(row_data)
+            print(f"Inserted {row_data['name']}...")
+        else:
+            print(f"Skipped insertion for {row_data['name']} (already exists)...")
 
 
 if __name__ == "__main__":
