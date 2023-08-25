@@ -30,17 +30,52 @@ Currently Learning:
 
 ![datastructure](./introduction/storage_structure.png "structure")
 
+### A simple startup sample
+
+1. Configure your Database-related softwares (pgsql, mongodb...)
+
+2. input your database params in db_conn.py
+
+```python
+class PGConfigs(str, Enum):
+    HOST = 'your host'
+    PORT = 'your port'
+    Database = 'your db'
+    User = 'your user name in pgsql'
+    Password = 'your pw in pgsql'
+
+
+# For MongoDB to store raw data
+client = MongoClient("your mongo url")
+RAW_DB = client["your mongo collection"]
+
+# For PGSQL to store product data
+DATA_PRO = create_engine(
+    f"postgresql://{PGConfigs.User}:{PGConfigs.Password}@{PGConfigs.HOST}:{PGConfigs.PORT}/{PGConfigs.Database}")
+```
+
+3. Open a python file: ./data_collection/boundary/administration_boundaries.py and run the following codes:
+
+```python
+if __name__ == "__main__":
+    start_time = time.time()
+    BoundariesCrawler("province").crawl_boundaries()
+    print("--- %s seconds ---" % (time.time() - start_time))
+```
+
+4. Now you can see the boundary data was put in your mongoDB.
+
 ### Data Content
 
-| Data               | Data Type | Scale           | Region | Source            |
-| ------------------ | --------- | --------------- | ------ | ----------------- |
-| Boundary           | Polygon   | City & Province | CN     | Gaode             |
-| POI                | Point     | Point           | CN     | Gaode             |
-| AOI                | Polygon   | Polygon         | CN     | Gaode             |
-| mobility           | Graph     | City            | CN     | Baidu             |
-| social-demographic | /         | City            | CN     | Baidu             |
-| Night_Light_Image  | tif       | City(m)         | CN     | Harvard Dataverse |
-| StreetView Image   | png       | Point           | CN     | Baidu             |
+| Data               | Data Type | Scale           | Region | Source            | Status                           |
+| ------------------ | --------- | --------------- | ------ | ----------------- | -------------------------------- |
+| Boundary           | Polygon   | City & Province | CN     | Gaode             | Mongo:Completed✅ PG: Developing |
+| POI                | Point     | Point           | CN     | Gaode             | /                                |
+| AOI                | Polygon   | Polygon         | CN     | Gaode             | /                                |
+| mobility           | Graph     | City            | CN     | Baidu             | /                                |
+| social-demographic | /         | City            | CN     | Baidu             | /                                |
+| Night_Light_Image  | tif       | City(m)         | CN     | Harvard Dataverse | /                                |
+| StreetView Image   | png       | Point           | CN     | Baidu             | /                                |
 
 ### Disclaimer:
 
