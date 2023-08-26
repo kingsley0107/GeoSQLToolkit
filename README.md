@@ -1,4 +1,4 @@
-ENGLISH [中文版](./zh-cn.md)
+ENGLISH
 
 > This version is under developing.
 

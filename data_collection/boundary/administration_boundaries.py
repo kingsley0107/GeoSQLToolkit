@@ -10,6 +10,8 @@ _description_:
 import pandas as pd
 import geopandas as gpd
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import json
 import time
 import datetime
@@ -18,7 +20,7 @@ from db_conn import RAW_DB, DATA_PRO
 import re
 
 
-# TODO: 1.Retry function & Time-out situation
+# TODO: 1.Retry function & Time-out situation(Solved✅)
 # TODO: 2.Mismatch Problem & resolution
 class BoundariesCrawler:
     def __init__(self, level):
@@ -27,9 +29,12 @@ class BoundariesCrawler:
         self.level = level
         self.current_year = datetime.datetime.now().year
         self.collection_name = f'{self.current_year}_amap_boundary_{self.level}'
-        self._user_SessionConfig()
+        self._setup_session()
 
-    def _user_SessionConfig(self):
+    def _setup_session(self):
+        self.session = requests.Session()
+        retries = Retry(total=5, backoff_factor=0.2)
+        self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.cookie = """cna=D2t3G7QczToCAd9KTy8b7FaR; passport_login=NjAxOTI4MTQ5LGFtYXBfMTM3MTM5NDAzODBBRzJrdFl3bE0seW5nYTM0b21xeXhja2dkc3BhNXZtYXduYXNuZGZjd3osMTY5MTY1MTE4MixNek5tWVdWbFlXRTBPVFV3WWpkaFpUTXdOamt4WkdJMFkyVTJaVGN6WXpNPQ%3D%3D; xlly_s=1; gray_auth=2; l=fBQLz3jHTBMvGKPyBOfaFurza77OSIRYYuPzaNbMi9fP_YCB5hScW1t97LY6C3GNF62eR3-WjmOpBeYBqQAonxv9lN9agSkmndLHR35..; isg=BGRk05q23D_oSy8zAw3vJjFTNWJW_Yhn0i8SAH6FMy_yKQXzpgxq9Yub74kx6sC_; tfstk=dXnwRVMwEhKwwnamozrqUxmUrzrTDud5omNbnxD0C5ViGEFm8jGeBSMD6jo4tjPjClj10rkma-_j5CIqTbDrCm9Tjokm1WnjC5NbonlmEjzvBSN0gjMm5ptWVAHTDoV2N3t5YxqYmroAihDtBoEDNQtWVAeV6r6AnASmmVyMkk6pJjMtYRzMPAVhmJnUQPPoIZscQZ1YK-bsDV5cuP2LL79eLAC4PUf.."""
         self.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
         self.host = "restapi.amap.com"
@@ -63,8 +68,13 @@ class BoundariesCrawler:
         Returns:
             _type_: _description_
         """
-        response = requests.get(url=url, params=params, headers=self.headers)
-        return json.loads(response.text)
+        try:
+            response = self.session.get(url=url, params=params, headers=self.headers, timeout=10)
+            response.raise_for_status()  # 抛出HTTPError异常如果请求不成功
+            return json.loads(response.text)
+        except requests.exceptions.RequestException as e:
+            print(f"Request error: {e}")
+            return None
 
     def extract_gdf(self, raw_data):
         if raw_data['count'] == "0":
@@ -90,23 +100,7 @@ class BoundariesCrawler:
         return data_to_mongo
 
     def crawl_boundaries(self):
-        # params = {
-        #     "keywords": None,
-        #     "subdistrict": 0,
-        #     "extensions": 'all',
-        #     "key": self.amap_key
-        # }
-        # print(f"Start crawling {self.level} from AMap...")
-        # if self.level == 'city':
-        #     administration_list, adcode_list = self.get_cities_list()
-        #
-        # elif self.level == 'province':
-        #     administration_list = self.get_province_list()
-        # for district in administration_list:
-        #     params['keywords'] = district
-        #     request_response = self.request_url(self.base_url, params=params)
-        #     data_to_mongo = self.extract_gdf(request_response)
-        #     self.data_to_mongo(data_to_mongo)
+
         params = {
             "keywords": None,
             "subdistrict": 0,
@@ -118,25 +112,22 @@ class BoundariesCrawler:
         if self.level == 'city':
             administration_list, adcode_list = self.get_cities_list()
             for district, adcode in zip(administration_list, adcode_list):
-                if self.is_existed(district):
-                    continue
-                params['keywords'] = adcode
-                request_response = self.request_url(self.base_url, params=params)
-                data_to_mongo = self.extract_gdf(request_response)
-                if not data_to_mongo:
-                    continue
-                data_to_mongo['name'] = district
-                self.data_to_mongo(data_to_mongo)
+                if not self.is_existed(district):
+                    params['keywords'] = adcode
+                    request_response = self.request_url(self.base_url, params=params)
+                    data_to_mongo = self.extract_gdf(request_response)
+                    if data_to_mongo:
+                        data_to_mongo['name'] = district
+                        self.data_to_mongo(data_to_mongo)
 
         elif self.level == 'province':
             administration_list = self.get_province_list()
             for district in administration_list:
-                if self.is_existed(district):
-                    continue
-                params['keywords'] = district
-                request_response = self.request_url(self.base_url, params=params)
-                data_to_mongo = self.extract_gdf(request_response)
-                self.data_to_mongo(data_to_mongo)
+                if not self.is_existed(district):
+                    params['keywords'] = district
+                    request_response = self.request_url(self.base_url, params=params)
+                    data_to_mongo = self.extract_gdf(request_response)
+                    self.data_to_mongo(data_to_mongo)
 
     def is_existed(self, name):
         if RAW_DB[self.collection_name].find_one({"name": name}):
@@ -151,5 +142,5 @@ class BoundariesCrawler:
 if __name__ == "__main__":
     start_time = time.time()
     # set level = 'province' or 'city'
-    BoundariesCrawler(level="province").crawl_boundaries()
+    BoundariesCrawler(level="city").crawl_boundaries()
     print("--- %s seconds ---" % (time.time() - start_time))
