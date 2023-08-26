@@ -77,6 +77,8 @@ class BoundariesCrawler:
             return None
 
     def extract_gdf(self, raw_data):
+        if not raw_data:
+            return None
         if raw_data['count'] == "0":
             print(f"Cannot find this area")
             return None
@@ -95,8 +97,15 @@ class BoundariesCrawler:
             geometry='geometry'
         )
         data_to_mongo = gdf.iloc[0].to_dict()
+        properties = {key: value for key, value in data_to_mongo.items() if key != 'geometry'}
+        # 构造 properties 部分
+        properties_dict = {
+            "name": properties['name'],
+            "adcode": properties['adcode'],
+            "level": properties['level']
+        }
         data_to_mongo['geometry'] = data_to_mongo['geometry'].__geo_interface__
-
+        data_to_mongo['properties'] = properties_dict
         return data_to_mongo
 
     def crawl_boundaries(self):
@@ -135,6 +144,8 @@ class BoundariesCrawler:
             return True
 
     def data_to_mongo(self, row_data):
+        if "date_time" not in tuple(row_data['properties'].keys()):
+            row_data['properties']['date_time'] = datetime.datetime.utcnow().isoformat()
         RAW_DB[self.collection_name].insert_one(row_data)
         print(f"Inserted {row_data['name']}...")
 
@@ -142,5 +153,5 @@ class BoundariesCrawler:
 if __name__ == "__main__":
     start_time = time.time()
     # set level = 'province' or 'city'
-    BoundariesCrawler(level="city").crawl_boundaries()
+    BoundariesCrawler(level="province").crawl_boundaries()
     print("--- %s seconds ---" % (time.time() - start_time))
