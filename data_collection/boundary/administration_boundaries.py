@@ -153,5 +153,5 @@ class BoundariesCrawler:
 if __name__ == "__main__":
     start_time = time.time()
     # set level = 'province' or 'city'
-    BoundariesCrawler(level="province").crawl_boundaries()
+    BoundariesCrawler(level="city").crawl_boundaries()
     print("--- %s seconds ---" % (time.time() - start_time))
