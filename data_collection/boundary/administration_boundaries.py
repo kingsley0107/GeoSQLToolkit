@@ -144,7 +144,7 @@ class BoundariesCrawler:
             return True
 
     def data_to_mongo(self, row_data):
-        row_data['date_time'] = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        row_data['date_time'] = datetime.datetime.now()
         row_data['properties']['date_time'] = row_data['date_time']
         RAW_DB[self.collection_name].insert_one(row_data)
         print(f"Inserted {row_data['name']}...")
