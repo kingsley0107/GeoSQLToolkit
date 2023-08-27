@@ -15,6 +15,10 @@ class PGConfigs(str, Enum):
 client = MongoClient("mongodb://localhost:27017/")
 RAW_DB = client["GeoSQLToolkit"]
 
+# For MongoDB to store pro-data
+Mongo_PRO = client['DATA_PRO']['data_production']
+
+
 # For PGSQL to store product data
 DATA_PRO = create_engine(
     f"postgresql://{PGConfigs.User}:{PGConfigs.Password}@{PGConfigs.HOST}:{PGConfigs.PORT}/{PGConfigs.Database}")

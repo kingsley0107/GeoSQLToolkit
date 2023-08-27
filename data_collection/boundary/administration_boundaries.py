@@ -16,12 +16,11 @@ import json
 import time
 import datetime
 from shapely.geometry import Polygon, MultiPolygon
-from db_conn import RAW_DB, DATA_PRO
+from db_conn import RAW_DB
 import re
 
 
-# TODO: 1.Retry function & Time-out situation(Solved✅)
-# TODO: 2.Mismatch Problem & resolution
+# TODO: 1.multi?
 class BoundariesCrawler:
     def __init__(self, level):
         self.base_url = "https://restapi.amap.com/v3/config/district?"
@@ -76,6 +75,16 @@ class BoundariesCrawler:
             print(f"Request error: {e}")
             return None
 
+    def extract_multipolygon(self, raw_str):
+        polygons = raw_str['polyline'].split("|")
+        process_geom = []
+        for polygon in polygons:
+            _coord_pairs = polygon.split(";")
+            coordinates = [tuple(map(float, point.split(','))) for point in _coord_pairs]
+            process_geom.append(coordinates)
+        multi_polygon = MultiPolygon(list(map(Polygon, process_geom)))
+        return multi_polygon
+
     def extract_gdf(self, raw_data):
         if not raw_data:
             return None
@@ -86,16 +95,15 @@ class BoundariesCrawler:
             raise TypeError("administration level is not match.")
         _this = raw_data['districts'][0]
         _this_name, _this_adcode, _this_level = _this['name'], _this['adcode'], _this['level']
-
-        _this_geom = list(map(
-            lambda pair: tuple(map(float, pair.split(","))),
-            re.split(r'[;|]', _this['polyline'])
-        ))
-        multi_polygon = MultiPolygon([Polygon(_this_geom)])
+        multi_polygon = self.extract_multipolygon(_this['polyline'])
         gdf = gpd.GeoDataFrame(
-            {'name': [_this_name], "adcode": [_this_adcode], "level": [_this_level], "geometry": [multi_polygon]},
+            {'name': [_this_name], "adcode": [_this_adcode], "level": [_this_level], "geometry": multi_polygon},
             geometry='geometry'
         )
+        return gdf
+
+
+    def format_gdf(self,gdf):
         data_to_mongo = gdf.iloc[0].to_dict()
         properties = {key: value for key, value in data_to_mongo.items() if key != 'geometry'}
         # 构造 properties 部分
@@ -124,10 +132,11 @@ class BoundariesCrawler:
                 if not self.is_existed(district):
                     params['keywords'] = adcode
                     request_response = self.request_url(self.base_url, params=params)
-                    data_to_mongo = self.extract_gdf(request_response)
-                    if data_to_mongo:
-                        data_to_mongo['name'] = district
-                        self.data_to_mongo(data_to_mongo)
+                    gdf = self.extract_gdf(request_response)
+                    formatted = self.format_gdf(gdf)
+                    if formatted:
+                        formatted['name'] = district
+                        self.data_to_mongo(formatted)
 
         elif self.level == 'province':
             administration_list = self.get_province_list()
@@ -135,8 +144,9 @@ class BoundariesCrawler:
                 if not self.is_existed(district):
                     params['keywords'] = district
                     request_response = self.request_url(self.base_url, params=params)
-                    data_to_mongo = self.extract_gdf(request_response)
-                    self.data_to_mongo(data_to_mongo)
+                    gdf = self.extract_gdf(request_response)
+                    formatted = self.format_gdf(gdf)
+                    self.data_to_mongo(formatted)
 
     def is_existed(self, name):
         if RAW_DB[self.collection_name].find_one({"name": name}):
@@ -153,5 +163,5 @@ class BoundariesCrawler:
 if __name__ == "__main__":
     start_time = time.time()
     # set level = 'province' or 'city'
-    BoundariesCrawler(level="province").crawl_boundaries()
+    BoundariesCrawler(level="city").crawl_boundaries()
     print("--- %s seconds ---" % (time.time() - start_time))
