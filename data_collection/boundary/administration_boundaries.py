@@ -144,8 +144,8 @@ class BoundariesCrawler:
             return True
 
     def data_to_mongo(self, row_data):
-        if "date_time" not in tuple(row_data['properties'].keys()):
-            row_data['properties']['date_time'] = datetime.datetime.utcnow().isoformat()
+        row_data['date_time'] = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        row_data['properties']['date_time'] = row_data['date_time']
         RAW_DB[self.collection_name].insert_one(row_data)
         print(f"Inserted {row_data['name']}...")
 
@@ -153,5 +153,5 @@ class BoundariesCrawler:
 if __name__ == "__main__":
     start_time = time.time()
     # set level = 'province' or 'city'
-    BoundariesCrawler(level="city").crawl_boundaries()
+    BoundariesCrawler(level="province").crawl_boundaries()
     print("--- %s seconds ---" % (time.time() - start_time))
