@@ -8,7 +8,7 @@ Created on 27 Aug 5:38 PM
 _description_:
 """
 from db_conn import RAW_DB, Mongo_PRO
-from proj_utils.load_mongo import construct_query_raw
+from proj_utils.load_mongo_raw import construct_query_raw
 from datetime import datetime
 
 

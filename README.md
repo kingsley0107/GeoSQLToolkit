@@ -68,15 +68,15 @@ if __name__ == "__main__":
 
 ### Data Content
 
-| Data               | Data Type | Scale           | Region | Source            | Status                           |
-| ------------------ | --------- | --------------- | ------ | ----------------- | -------------------------------- |
-| Boundary           | Polygon   | City & Province | CN     | Gaode             | Mongo:Completed✅ PG: Developing |
-| POI                | Point     | Point           | CN     | Gaode             | /                                |
-| AOI                | Polygon   | Polygon         | CN     | Gaode             | /                                |
-| mobility           | Graph     | City            | CN     | Baidu             | /                                |
-| social-demographic | /         | City            | CN     | Baidu             | /                                |
-| Night_Light_Image  | tif       | City(m)         | CN     | Harvard Dataverse | /                                |
-| StreetView Image   | png       | Point           | CN     | Baidu             | /                                |
+| Data               | Data Type | Scale           | Region | Source            | Status                            |
+| ------------------ | --------- | --------------- | ------ | ----------------- | --------------------------------- |
+| Boundary           | Polygon   | City & Province | CN     | Gaode             | Mongo:Completed✅ PG: Completed✅ |
+| POI                | Point     | Point           | CN     | Gaode             | Mongo:Developing                  |
+| AOI                | Polygon   | Polygon         | CN     | Gaode             | /                                 |
+| mobility           | Graph     | City            | CN     | Baidu             | /                                 |
+| social-demographic | /         | City            | CN     | Baidu             | /                                 |
+| Night_Light_Image  | tif       | City(m)         | CN     | Harvard Dataverse | /                                 |
+| StreetView Image   | png       | Point           | CN     | Baidu             | /                                 |
 
 ### Disclaimer:
 

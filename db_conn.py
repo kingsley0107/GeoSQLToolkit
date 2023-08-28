@@ -6,7 +6,7 @@ from pymongo import MongoClient
 class PGConfigs(str, Enum):
     HOST = 'localhost'
     PORT = '5432'
-    Database = 'GeoSQLToolkit'
+    Database = 'postgres'
     User = 'postgres'
     Password = '545591917'
 
