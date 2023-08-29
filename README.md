@@ -7,8 +7,8 @@
     - [Data Processing](#data-processing)
   - [Database structure](#database-structure)
   - [A simple startup sample](#a-simple-startup-sample)
-  - [Disclaimer](#disclaimer-)
-  - [Contact](#contact-)
+  - [Disclaimer](#disclaimer)
+  - [Contact](#contact)
 
 > This version is under developing.
 
@@ -118,10 +118,10 @@ if __name__ == "__main__":
 6. Now you have successfully put the data into your postgres.
    ![pg_example](./introduction/pg_example.png "example")
 
-### Disclaimer:
+### Disclaimer
 
 The code is intended for personal studying and research purposes only. Please do not use it for any non-scientific or illegal purposes.
 
-### Contact:
+### Contact
 
 Feel free to contact for technical discussions (kingsleyl0107@gmail.com).
