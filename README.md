@@ -12,6 +12,8 @@
 
 > This version is under developing.
 
+> TODO：docker to cloud.
+
 # GeoSQLToolkit: A Spatial-Temporal Data Management Tool Encompassing the Entire Lifecycle from Data Acquisition to Storage
 
 ### Introduction
